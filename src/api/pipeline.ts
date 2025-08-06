@@ -1,23 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import { baseUrl } from "./baseUrl";
-import { useAuthContext } from "@/providers/authUtils";
+import { pipelineData } from "@/constant/pipelineData";
 
 export const useGetPipelines = () => {
-  const { token } = useAuthContext();
-
   return useQuery({
-    queryFn: () =>
-      axios
-        .get(`${baseUrl}pipeline-routes-viewset/`, {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        })
-        .then((res) => {
-          return res.data;
-        }),
+    queryFn: () => {
+      // Simulate API delay
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          // Combine both datasets for maximum coverage
+          const combinedData = [...pipelineData];
+          resolve(combinedData);
+        }, 500);
+      });
+    },
     queryKey: ["pipelines"],
-    enabled: !!token,
+    enabled: true, // Always enabled since we're using local data
   });
 };

@@ -11,7 +11,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import DetailsPane from "./DetailsPane";
-import { PipelineRoute, Status } from "@/types/Map";
+import { PipelineRoute, Status, Fault } from "@/types/Map";
 import { debounce } from "lodash";
 import { Button } from "./ui/button";
 import StatusDropdown from "./StatusDropdown";
@@ -79,17 +79,19 @@ const MapComponent: React.FC = () => {
   const memoizedRoutes = useMemo(() => {
     if (!data) return [];
 
-    return data.filter((route: PipelineRoute<Status>) => {
+    const pipelineData = Array.isArray(data) ? data : [];
+    return pipelineData.filter((route: PipelineRoute<Status>) => {
       if (filterStatus !== "All" && route.status !== filterStatus) return false;
       return true;
-    }) as PipelineRoute<Status>[];
+    });
   }, [filterStatus, data]);
 
+  
   return (
     <div className="flex flex-col min-h-dvh">
       {/* Tabs for Data Layer */}
       <Tabs defaultValue="current" className="mb-4">
-        <div className="flex flex-wrap items-center justify-between p-4 shadow-md mb-4">
+        <div className="flex flex-wrap items-center justify-between p-4 mb-4 shadow-md">
           <TabsList>
             <TabsTrigger value="current">Current Data</TabsTrigger>
             <TabsTrigger value="historical">Historical Data</TabsTrigger>
@@ -111,23 +113,23 @@ const MapComponent: React.FC = () => {
         </div>
         {isLoading && <SkeletonLoader />}
         {isError && <div>Error fetching data</div>}
-        {!isLoading && !isError && (!data || data.length < 1) && (
+        {!isLoading && !isError && (!data || !Array.isArray(data) || data.length < 1) && (
           <div>No Pipeline route Found</div>
         )}
-        {!isLoading && !isError && data && data.length > 0 && (
+        {!isLoading && !isError && data && Array.isArray(data) && data.length > 0 ? (
           <>
             <TabsContent value="current">
               <MapContainer
                 center={mapCenter}
                 zoom={mapZoom}
-                className="h-96 w-full"
+                className="w-full h-96"
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
-                {memoizedRoutes.map((route) => {
-                  const latLngs = [
+                {memoizedRoutes.map((route: PipelineRoute<Status>) => {
+                  const latLngs: [number, number][] = [
                     [
                       route.coordinates.start.latitude,
                       route.coordinates.start.longitude,
@@ -136,7 +138,7 @@ const MapComponent: React.FC = () => {
                       route.coordinates.end.latitude,
                       route.coordinates.end.longitude,
                     ],
-                  ] as [number, number][];
+                  ];
 
                   const pipeColor = getColorForStatus(route.status);
 
@@ -190,7 +192,7 @@ const MapComponent: React.FC = () => {
                                   <>
                                     <strong>Faults:</strong>
                                     <br />
-                                    {route.faults.map((fault, faultIndex) => (
+                                    {route.faults.map((fault: Fault, faultIndex: number) => (
                                       <div key={faultIndex}>
                                         {fault.description}
                                         <br />
@@ -220,7 +222,7 @@ const MapComponent: React.FC = () => {
 
                       {showFaults &&
                         route.status !== "normal" &&
-                        route.faults.map((fault, index) => (
+                        route.faults.map((fault: Fault, index: number) => (
                           <Marker
                             key={index}
                             position={[
@@ -277,14 +279,14 @@ const MapComponent: React.FC = () => {
               <MapContainer
                 center={mapCenter}
                 zoom={mapZoom}
-                className="h-96 w-full"
+                className="w-full h-96"
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
-                {memoizedRoutes.map((route) => {
-                  const latLngs = [
+                {memoizedRoutes.map((route: PipelineRoute<Status>) => {
+                  const latLngs: [number, number][] = [
                     [
                       route.coordinates.start.latitude,
                       route.coordinates.start.longitude,
@@ -293,7 +295,7 @@ const MapComponent: React.FC = () => {
                       route.coordinates.end.latitude,
                       route.coordinates.end.longitude,
                     ],
-                  ] as [number, number][];
+                  ];
 
                   return (
                     <Polyline
@@ -348,7 +350,7 @@ const MapComponent: React.FC = () => {
                                   <>
                                     <strong>Faults:</strong>
                                     <br />
-                                    {route.faults.map((fault, faultIndex) => (
+                                    {route.faults.map((fault: Fault, faultIndex: number) => (
                                       <div key={faultIndex}>
                                         {fault.description}
                                         <br />
@@ -385,7 +387,7 @@ const MapComponent: React.FC = () => {
             </TabsContent>
             <Legend />
           </>
-        )}
+        ) : null}
       </Tabs>
     </div>
   );
